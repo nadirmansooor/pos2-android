@@ -1,0 +1,75 @@
+# ============================================================================
+#  ApnaSoft POS 2.0 - ANDROID APK بنانے کا کام (GitHub Actions - مفت)
+#  v5 - آزمودہ حتمی راستہ:
+#    raw buildozer لائن ختم - اب "buildozer-action" استعمال ہو رہا ہے
+#    (یہ action اپنا SDK + Java + NDK + licences سب خود سنبھالتا ہے -
+#     یہی ہزاروں Kivy ایپس کی APK بنا چکا ہے)
+#    دو الگ jobs: اردو اور English الگ الگ بنیں گی - ایک مرے تو دوسری زندہ
+# ============================================================================
+name: Build ApnaSoft POS Android APKs
+on:
+  workflow_dispatch:
+
+jobs:
+  # ============================ APK 1: اردو ============================
+  urdu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: WORKFLOW v5 (buildozer-action) - اردو job
+        run: echo "===== v5 urdu ====="
+
+      - name: Build URDU APK (آزمودہ action)
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: apkbuild
+        with:
+          workdir: pos2-android
+          buildozer_version: stable
+
+      - name: APK ڈھونڈ کر دکھائیں
+        run: |
+          echo "filename: ${{ steps.apkbuild.outputs.filename }}"
+          ls -la pos2-android/bin/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ApnaSoftPOS2-Urdu-apk
+          path: ${{ steps.apkbuild.outputs.filename }}
+          if-no-files-found: warn
+
+  # ============================ APK 2: English ============================
+  english:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: WORKFLOW v5 (buildozer-action) - English job
+        run: echo "===== v5 english ====="
+
+      - name: ڈیفالٹ زبان English کریں
+        run: |
+          sed -i 's/"POS2_LANG", "ur"/"POS2_LANG", "en"/' pos2-android/main.py
+          grep -n "POS2_LANG" pos2-android/main.py | head -1
+
+      - name: Build ENGLISH APK (آزمودہ action)
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: apkbuild
+        with:
+          workdir: pos2-android
+          buildozer_version: stable
+
+      - name: APK ڈھونڈ کر دکھائیں
+        run: |
+          echo "filename: ${{ steps.apkbuild.outputs.filename }}"
+          ls -la pos2-android/bin/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ApnaSoftPOS2-English-apk
+          path: ${{ steps.apkbuild.outputs.filename }}
+          if-no-files-found: warn
